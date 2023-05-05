@@ -29,7 +29,7 @@ config = {
         "included_keywords": [],
         "contract_type": [],
         "remote": False,
-        "mininum_salary": 0
+        "minium_salary": 0
     },
     "options": {
         "hide_jobs": False,
