@@ -20,6 +20,7 @@ class AutoApply:
     def end(self):
         pass
 
+print('salut')
 
 config = {
     "inputs": {
