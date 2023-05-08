@@ -1,5 +1,4 @@
 import random
-import threading
 import time
 
 from selenium import webdriver
@@ -9,14 +8,15 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
 
-class LinkedIn(threading.Thread):
-
-    def __init__(self, setting, name=None):
-        super(LinkedIn, self).__init__(name=name)
-        self.setting = setting
-        self.keywords = setting['inputs']['keywords']
-        self.options = setting['options']
-        self.presets = setting['presets']
+class LinkedIn:
+    def __init__(self, config):
+        super().__init__()
+        if config['options']['DEBUG']:
+            print('init Indeed')
+        self.setting = config
+        self.keywords = config['inputs']['keywords']
+        self.options = config['options']
+        self.presets = config['presets']
         self.user = self.setting['user']
         self.list_jobs_url = f"https://www.linkedin.com/jobs/search/?keywords={self.setting['inputs']['keywords'][random.randint(0, len(self.setting['inputs']['keywords'])-1)]}&location={self.setting['inputs']['localization']}&f_AL=true"
         options = Options()
@@ -47,31 +47,34 @@ class LinkedIn(threading.Thread):
     # ---------------- LOGIN -------------------- #
 
     def pass_captcha(self) -> bool:
-        time.sleep(3)
-        if len(self.find_elements('#FunCaptcha')) > 0:
-            time.sleep(25)
+        time.sleep(40)
+        return True
+
+    def is_logged_in(self) -> bool:
+        if len(self.find_elements('body div > .authentication-outlet')) > 0:
             return True
         else:
             return False
 
     def login(self):
-        self.driver.get("https://www.linkedin.com")
-        for i in range(10):
-
-            try:
-                self.find_element("#session_key").send_keys(self.user['email'])
-                self.find_element("#session_password").send_keys(self.user['password'])
-                time.sleep(3)
-                self.find_element("form .sign-in-form__footer--full-width > button").click()
+        ok = False
+        for x in range(10):
+            self.driver.get("https://www.linkedin.com")
+            for i in range(15):
+                try:
+                    self.find_element("#session_key").send_keys(self.user['email'])
+                    self.find_element("#session_password").send_keys(self.user['password'])
+                    time.sleep(3)
+                    self.find_element("form .sign-in-form__footer--full-width > button").click()
+                    ok = True
+                    break
+                except:
+                    time.sleep(2)
+            if ok:
                 break
-            except:
-                time.sleep(2)
-        if self.pass_captcha():
-            self.new_driver()
-        time.sleep(5)
-
-    def is_logged_in(self) -> bool:
-        return True
+        self.pass_captcha()
+        if not self.is_logged_in():
+            self.login()
 
     # ---------------- GENERAL -------------------- #
 
@@ -79,32 +82,6 @@ class LinkedIn(threading.Thread):
         pass
 
     def send_message(self) -> bool:
-        pass
-
-    # ---------------- SCRAPPER -------------------- #
-
-    def scrap_job(self, url) -> dict:
-        pass
-
-    def scrap_jobs_list(self, url) -> dict:
-        pass
-
-    def scrap_profil(self, url) -> dict:
-        pass
-
-    def scrap_profils_list(self, url) -> dict:
-        pass
-
-    def scrap_company(self, url) -> dict:
-        pass
-
-    def scrap_companies_list(self, url) -> dict:
-        pass
-
-    def scrap_event(self, url) -> dict:
-        pass
-
-    def scrap_events(self, url) -> dict:
         pass
 
     # ---------------- PROSPECTING -------------------- #
