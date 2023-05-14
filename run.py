@@ -5,7 +5,7 @@ class AutoApply:
 
     def __init__(self, s):
         super(AutoApply, self).__init__()
-        self.linkedin = LinkedIn(s, name="linkedin")
+        self.linkedin = LinkedIn(s)
 
     def start(self):
         self.linkedin.application_loop()
