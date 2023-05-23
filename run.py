@@ -1,51 +1,35 @@
+import time
+from pprint import pprint
+
 from linkedin import LinkedIn
 
-
-class AutoApply:
-
-    def __init__(self, s):
-        super(AutoApply, self).__init__()
-        self.linkedin = LinkedIn(s)
-
-    def start(self):
-        self.linkedin.application_loop()
-
-    def end(self):
-        pass
-
-
 config = {
-    "inputs": {
-        "keywords": ['seo', 'webmarketing', 'wordpress', 'e-commerce'],
-        "localization": "Ile-de-France",
-        "excluded_keywords": ['stag'],
-        "included_keywords": [],
-        "contract_type": [],
-        "remote": False,
-        "minium_salary": 0
-    },
-    "options": {
-        "hide_jobs": False,
-        "message_to_recruiter": False,
-        "DEBUG": False,
-        "headless": False,
-        "infinite": True,
-        "safe_mode": False
-    },
-    "presets": {
-        "phone": "0665774180",
-        "name": "Tom",
-        "nom": "Tom",
-        "pays": "fr",
-        "mail": "zaptom.pro@gmail.com",
-        "twitter": "https://twitter.com/tom_zapico",
-        "linkedin": "https://www.linkedin.com/in/tom-zapico/",
-        "internet": "https://tom-zapico.com"
-    },
     "user": {
         "email": "zaptom.pro@gmail.com",
         "password": "Tom01032000",
-        "phone": "0665774180"
-    }
+        "phone": "066577418"
+    },
 }
-AutoApply(config).start()
+
+linkedin = LinkedIn(config)
+driver = linkedin.login()
+
+# ========== JOBS ============ #
+
+url = f"https://www.linkedin.com/jobs/search/keywords=seo&location=Clichy%2C%20%C3%8Ele-de-France%2C%20France&refresh=true"
+data = linkedin.application(driver=driver, url=url).apply()
+pprint(data)
+
+# ============= CONTACTS ==================== #
+
+# url = f"https://www.linkedin.com/search/results/people/?keywords=recruteur"
+# feature = linkedin.contacts(driver=driver, url=url)
+# feature.invite()
+# feature.contact()
+
+# ============== GROUPS ================= #
+
+url = f""
+
+pprint(data)
+time.sleep(999999)
