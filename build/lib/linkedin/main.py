@@ -2,23 +2,21 @@ import time
 
 from selenium.webdriver.common.keys import Keys
 
-from selenium_driver import selenium_driver
-from selenium_scrapper import selenium_scrapper
-from .application import application as linkedin_application
+from selenium_driver import SeleniumDriver
+from selenium_sequence import Sequence
+from .application import application
 
 
 class LinkedIn:
 
     def __init__(self, config, driver=None):
+        print('-> create LinkedIn bot')
         self.config = config
-        if driver is None:
-            self.driver = selenium_driver()
-        else:
-            self.driver = driver
+        self.driver = SeleniumDriver() if driver is None else driver
         return
 
     def login(self):
-        print('login')
+        print('-> login')
         time.sleep(1)
         while not self.driver.is_attached('body > .application-outlet *'):
             self.driver.get('https://linkedin.com')
@@ -26,103 +24,70 @@ class LinkedIn:
                 self.driver.write('#session_key', self.config['user']['email'])
                 self.driver.write('#session_password',
                                   self.config['user']['password'])
-                self.driver.write('#session_password', Keys.ENTER)
+                self.driver.click("#main-content .sign-in-form__footer--full-width > button")
                 time.sleep(3)
             time.sleep(1)
             self.driver.captcha()
         print('logged in !')
         return self.driver
 
-    # ---------------- POSTS -------------------- #
-
-    class posts:
-
-        def __init__(self, driver=None, url=None, data=None) -> None:
-            self.driver = driver
-            if url is not None:
-                self.driver.get(url)
-            if data is None:
-                data = selenium_scrapper(driver=self.driver)
-            self.data = data
-            return
-
-        def post(self, url=None, setting={}):
-            return self.data
-
-        def like(self, url=None, setting={}):
-            return self.data
-
-        def comment(self, url=None, setting={}):
-            return self.data
-
-    # ---------------- CONTACTS -------------------- #
-
-    class contacts:
-
-        def __init__(self, driver=None, url=None, data=None) -> None:
-            self.driver = driver
-            if url is not None:
-                self.driver.get(url)
-            if data is None:
-                data = selenium_scrapper(driver=self.driver)
-            self.data = data
-            return
-
-        def invite(self, url=None, setting={}):
-            if url is not None:
-                self.driver.get(url)
-            print('invite')
-            if len(self.data) > 0:
-                for item in self.data:
-                    self.driver.get(item['contact_link'])
-                    for item in self.driver.find_elements('.pvs-profile-actions button'):
-                        if 'invite' in item.getProperty('data-label').lower() or "connect" in item.getProperty('innexText').lower():
-                            item.click()
-                            self.driver.click('.artdeco-modal__content button:lastchild')
-                            break
-            return self.data
-
-        def message(self, url=None, setting={}):
-            return self.data
-
-    # ---------------- GROUPS -------------------- #
-
-    class groups:
-
-        def __init__(self, driver=None, url=None, data=None) -> None:
-            self.driver = driver
-            if url is not None:
-                self.driver.get(url)
-            if data is None:
-                data = selenium_scrapper(driver=self.driver)
-            self.data = data
-            return
-
-        def join(self, url=None, setting={}):
-            return self.data
-
     # ---------------- JOB APPLICATION -------------------- #
 
-    class application:
+    class Jobs:
 
-        def __init__(self, driver=None, url=None, data=None) -> None:
-            self.driver = driver
+        def __init__(self, driver=None, url=None) -> None:
+            print('-> init Jobs')
+            if driver is None:
+                self.driver = SeleniumDriver()
+            else:
+                self.driver = driver
+            # self.driver = SeleniumDriver() if driver is None else driver
+            # self.driver.get(url) if url is not None else ''
             if url is not None:
                 self.driver.get(url)
-            if data is None:
-                data = selenium_scrapper(driver=self.driver)
-            self.data = data
+            # url = f"https://www.linkedin.com/jobs/search/?currentJobId=3620288377&f_AL=true&f_JT=I&keywords=seo&location=Ile-de-France"
+            # filename = "testing"
+            # sequence = Sequence(url=url, driver=self.driver)
+            # sequence.play()
+            # self.data = sequence.data
+            self.data = []
             return
 
-        def apply(self, url=None, setting={}):
-            if url is not None:
-                self.driver.get(url)
-            print('apply')
-            if len(self.data) > 0:
-                for item in self.data:
-                    linkedin_application(
-                        self.driver, setting).run(item['job_link'])
+        def apply(self, url=None):
+            print('-> apply')
+            self.driver.get(url) if url is not None else ''
+            sequence = Sequence(driver=self.driver)
+            sequence.play()
+            print(sequence.data)
+            self.data.extend(sequence.data)
+            application(self.driver).run()
+            return
+
+        def multi_apply(self, urls=None):
+            print('-> multi_apply')
+            # print('apply')
+            if urls is None:
+                print('find urls')
+                sequence = Sequence(driver=self.driver, sequence={
+                    ":loop": {
+                        "pagination": 1,
+                        # "pagination": 'div.jobs-search-results-list__pagination li:last-child',
+                        "listing": {
+                            ":execute_script": 'document.querySelector("div.jobs-search-results-list").scroll(0, 999999)',
+                            ":get:all": {"property": "href",
+                                        "selector": 'div.artdeco-entity-lockup__title > a.job-card-container__link'},
+                            ":click": 'div.jobs-search-results-list__pagination li.selected + li',
+                        },
+                        "deep": False
+                    }
+                })
+                sequence.play()
+                print(sequence.data)
+                urls = sequence.data
+            print(urls)
+            for uri in urls:
+                self.apply(url=uri)
             return self.data
 
-        def contact_recruiters(self):
+        def contact_job_recruiters(self):
             return self.data

@@ -3,8 +3,8 @@ import time
 
 class application:
 
-    def __init__(self, driver, setting) -> None:
-        self.setting = setting
+    def __init__(self, driver) -> None:
+        self.setting = {}
         self.setting['presets'] = {
             "phone": "066577418",
             "name": "tom",
@@ -14,6 +14,7 @@ class application:
             "linkedin": "https://www.linkedin.com/in/tom-zapico/",
         }
         self.driver = driver
+        self.data = {}
         return
 
     def run(self, url=None):
@@ -33,7 +34,7 @@ class application:
                 return
         time.sleep(2)
         self.application_exit()
-        return
+        return self.data
 
     # def contact_recruiter(self):
     #     pass

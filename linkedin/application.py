@@ -4,16 +4,10 @@ import time
 class application:
 
     def __init__(self, driver, setting) -> None:
+        print('application')
         self.setting = setting
-        self.setting['presets'] = {
-            "phone": "066577418",
-            "name": "tom",
-            "nom": "tom",
-            "pays": "fr",
-            "mail": "zaptom.pro@gmail.com",
-            "linkedin": "https://www.linkedin.com/in/tom-zapico/",
-        }
         self.driver = driver
+        self.data = {}
         return
 
     def run(self, url=None):
@@ -21,19 +15,28 @@ class application:
         if url is not None:
             self.driver.get(url)
             url = self.driver.current_url()
+        ok = True
+        h1 = self.driver.find_elements("h1").get_property('innerText')
+        print(h1)
+        for excluded_company in self.setting['exluded_companies']:
+            if excluded_company in h1:
+                ok = False
+                break
+        if not ok:
+            return False
         if self.driver.is_attached('div.jobs-apply-button--top-card > button.jobs-apply-button'):
             self.driver.click(
                 'div.jobs-apply-button--top-card > button.jobs-apply-button')
         if self.application_is_ended():
-            return
+            return False
         for _ in range(10):
             self.application_question()
             if self.application_is_ended() or self.application_has_error():
                 print("+1 Application")
-                return
+                return True
         time.sleep(2)
         self.application_exit()
-        return
+        return False
 
     # def contact_recruiter(self):
     #     pass

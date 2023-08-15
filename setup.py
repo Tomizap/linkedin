@@ -18,7 +18,7 @@ setup(
     install_requires=[
         "selenium", 
         "selenium_driver @ git+https://github.com/Tomizap/selenium_driver.git#egg=selenium_driver",
-        "selenium_scrapper @ git+https://github.com/Tomizap/selenium_scrapper.git#egg=selenium_scrapper"
+        "selenium_sequence @ git+https://github.com/Tomizap/selenium_sequence.git#egg=selenium_sequence"
     ],
     dependency_link=[],
     keywords=[],

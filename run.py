@@ -4,32 +4,33 @@ from pprint import pprint
 from linkedin import LinkedIn
 
 config = {
+    "url" : 'https://www.linkedin.com/jobs/search/?currentJobId=3671928543&geoId=105015875&keywords=rh&location=France&refresh=true',
     "user": {
         "email": "zaptom.pro@gmail.com",
         "password": "Tom01032000",
-        "phone": "066577418"
+        # "phone": "066577418"
     },
+    "automnation": {
+        "_id": ""
+    },
+    'setting': {
+        'excluded_keywords': [],
+        'excluded_companies': ['iscod', 'aston'],
+        'presets': {
+            "phone": "066577418",
+            "name": "tom",
+            "nom": "tom",
+            "pays": "fr",
+            "mail": "zaptom.pro@gmail.com",
+            "linkedin": "https://www.linkedin.com/in/tom-zapico/",
+        }
+    }
 }
 
-linkedin = LinkedIn(config)
-driver = linkedin.login()
+bot = LinkedIn(config)
 
-# ========== JOBS ============ #
+bot.multi_apply()
 
-url = f"https://www.linkedin.com/jobs/search/keywords=seo&location=Clichy%2C%20%C3%8Ele-de-France%2C%20France&refresh=true"
-data = linkedin.application(driver=driver, url=url).apply()
-pprint(data)
+pprint(bot.data)
 
-# ============= CONTACTS ==================== #
-
-# url = f"https://www.linkedin.com/search/results/people/?keywords=recruteur"
-# feature = linkedin.contacts(driver=driver, url=url)
-# feature.invite()
-# feature.contact()
-
-# ============== GROUPS ================= #
-
-url = f""
-
-pprint(data)
 time.sleep(999999)
