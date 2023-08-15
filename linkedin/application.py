@@ -16,10 +16,11 @@ class application:
             self.driver.get(url)
             url = self.driver.current_url()
         ok = True
-        h1 = self.driver.find_elements("h1").get_property('innerText')
-        print(h1)
-        for excluded_company in self.setting['exluded_companies']:
+        h1 = self.driver.find_element("h1").get_property('innerText').lower()
+        # print(h1)
+        for excluded_company in self.setting['excluded_companies']:
             if excluded_company in h1:
+                # print('excluded_company')
                 ok = False
                 break
         if not ok:

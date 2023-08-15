@@ -34,66 +34,83 @@ class LinkedIn:
 
     # ---------------- JOB APPLICATION -------------------- #
 
-    # class Jobs:
-
-    #     def __init__(self, driver=None, url=None) -> None:
-    #         print('-> init Jobs')
-    #         if driver is None:
-    #             self.driver = SeleniumDriver()
-    #         else:
-    #             self.driver = driver
-    #         # self.driver = SeleniumDriver() if driver is None else driver
-    #         # self.driver.get(url) if url is not None else ''
-    #         if url is not None:
-    #             self.driver.get(url)
-    #         # url = f"https://www.linkedin.com/jobs/search/?currentJobId=3620288377&f_AL=true&f_JT=I&keywords=seo&location=Ile-de-France"
-    #         # filename = "testing"
-    #         # sequence = Sequence(url=url, driver=self.driver)
-    #         # sequence.play()
-    #         # self.data = sequence.data
-    #         self.data = []
-    #         return
-
     def apply(self, url=None):
         print('-> apply')
         self.login()
+
         self.driver.get(url) if url is not None else ''
         url = self.driver.current_url()
-        # sequence = Sequence(driver=self.driver)
-        # sequence.play()
-        # print(sequence.data)
-        # self.data.extend(sequence.data.copy())
-        return application(self.driver, self.config['setting']).run(url=url)
 
-    def multi_apply(self, urls=None):
+        application_ok = application(self.driver, self.config['setting']).run(url=url)
+
+        item = {}
+        if self.config['setting']['scrap']:
+            sequence = Sequence(driver=self.driver)
+            sequence.play()
+            sequence.data
+            print(sequence.data)
+            item = sequence.data[0]
+        item['url'] = url
+        item['application_ok'] = application_ok
+
+        self.data.extend([item.copy()])
+        print(self.data)
+
+        return item
+
+    def multi_apply(self):
         print('-> multi_apply')
         self.login()
-        # print('apply')
-        self.driver.get(self.config['url'])
-        if urls is None:
-            print('find urls')
-            sequence = Sequence(driver=self.driver, sequence={
-                ":loop": {
-                    "pagination": 1,
-                    # "pagination": 'div.jobs-search-results-list__pagination li:last-child',
-                    "listing": {
-                        ":execute_script": 'document.querySelector("div.jobs-search-results-list").scroll(0, 999999)',
-                        ":get:all": {"property": "href",
-                                    "selector": 'div.artdeco-entity-lockup__title > a.job-card-container__link'},
-                        ":click": 'div.jobs-search-results-list__pagination li.selected + li',
-                    },
-                    "deep": False
-                }
-            })
-            sequence.play()
-            # print(sequence.data)
-            # for url in sequence.data:
-            #     url = url.split('?')[0]
-            urls = sequence.data
-        # print(urls)
-        for uri in urls:
-            if self.apply(url=uri) is True:
-                print('Application Successful')
+
+        urlIndex = -1
+        try:
+            while 1 == 1:
+                
+                print(self.config['urls'][urlIndex])
+                self.driver.get(self.config['urls'][urlIndex])
+                
+                # print('find urls')
+                print('scrapping ..')
+                sequence = Sequence(driver=self.driver, sequence={
+                    ":loop": {
+                        "pagination": 1,
+                        # "pagination": 'div.jobs-search-results-list__pagination li:last-child',
+                        "listing": {
+                            ":execute_script": 'document.querySelector("div.jobs-search-results-list").scroll(0, 999999)',
+                            ":get:all": {"property": "href",
+                                        "selector": 'div.artdeco-entity-lockup__title > a.job-card-container__link'},
+                            ":click": 'div.jobs-search-results-list__pagination li.selected + li',
+                        },
+                        "deep": False
+                    }
+                })
+                sequence.play()
+
+                # print(sequence.data)
+                # for url in sequence.data:
+                #     url = url.split('?')[0]
+
+                uris = sequence.data
+                i = 0
+                for uri in uris:
+                    print(f"application {i} / {len(uris)} ")
+                    i = i + 1
+                    if self.apply(url=uri) is True:
+                        print('Application Successful')
+                
+                
+                urlIndex = urlIndex + 1
+                if urlIndex > len(self.config['urls']):
+                    if not self.config['setting']['infinite']:
+                        break
+                    else:
+                        urlIndex = 0
+
+                print('continue because infinite')
+
+        except:
+            print('Une erreur est survenue')
+
         return self.data
 
     # def contact_job_recruiters(self):

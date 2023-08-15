@@ -1,4 +1,7 @@
 /env/
 .idea
+.venv
+.vscode
+/linkedin/__pycache__/
 /linkedin.egg-info/
 /build/
