@@ -2,3 +2,6 @@
 /linkedin.egg-info/
 /.gitignore
 /build/
+.idea/
+env
+.linkedin/linkedin/__pycache__/

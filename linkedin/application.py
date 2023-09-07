@@ -1,4 +1,13 @@
 import time
+# from bson import ObjectId
+# import pymongo
+
+
+# def update_internships(update={}):
+#     client = pymongo.MongoClient("mongodb+srv://alterrecrut:Xw9SZ0QUmVhyWHmd@cluster0.qp93luo.mongodb.net/?retryWrites=true&w=majority")
+#     db = client["app"]
+#     collection = db["internships"]
+#     collection.update_one({"_id": ObjectId("64eb4025630f327cff674d1a")}, update)
 
 
 class application:

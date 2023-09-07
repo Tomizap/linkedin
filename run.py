@@ -7,8 +7,8 @@ config = {
     "_id": "",
     "urls" : ["https://www.linkedin.com/jobs/search/?currentJobId=3671928543&geoId=105015875&keywords=rh&location=France&refresh=true"],
     "user": {
-        "email": "zaptom.pro@gmail.com",
-        "password": "Tom01032000",
+        "email": "reinofabrice@gmail.com",
+        "password": "Paris75017",
     },
     "setting": {
         "excluded_keywords": [],

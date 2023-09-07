@@ -1,18 +1,20 @@
 import time
+# from bson import ObjectId
+# import pymongo
+
+
+# def update_internships(update={}):
+#     client = pymongo.MongoClient("mongodb+srv://alterrecrut:Xw9SZ0QUmVhyWHmd@cluster0.qp93luo.mongodb.net/?retryWrites=true&w=majority")
+#     db = client["app"]
+#     collection = db["internships"]
+#     collection.update_one({"_id": ObjectId("64eb4025630f327cff674d1a")}, update)
 
 
 class application:
 
-    def __init__(self, driver) -> None:
-        self.setting = {}
-        self.setting['presets'] = {
-            "phone": "066577418",
-            "name": "tom",
-            "nom": "tom",
-            "pays": "fr",
-            "mail": "zaptom.pro@gmail.com",
-            "linkedin": "https://www.linkedin.com/in/tom-zapico/",
-        }
+    def __init__(self, driver, setting) -> None:
+        print('application')
+        self.setting = setting
         self.driver = driver
         self.data = {}
         return
@@ -22,19 +24,29 @@ class application:
         if url is not None:
             self.driver.get(url)
             url = self.driver.current_url()
+        ok = True
+        h1 = self.driver.find_element("h1").get_property('innerText').lower()
+        # print(h1)
+        for excluded_company in self.setting['excluded_companies']:
+            if excluded_company in h1:
+                # print('excluded_company')
+                ok = False
+                break
+        if not ok:
+            return False
         if self.driver.is_attached('div.jobs-apply-button--top-card > button.jobs-apply-button'):
             self.driver.click(
                 'div.jobs-apply-button--top-card > button.jobs-apply-button')
         if self.application_is_ended():
-            return
+            return False
         for _ in range(10):
             self.application_question()
             if self.application_is_ended() or self.application_has_error():
                 print("+1 Application")
-                return
+                return True
         time.sleep(2)
         self.application_exit()
-        return self.data
+        return False
 
     # def contact_recruiter(self):
     #     pass
