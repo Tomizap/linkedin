@@ -1,215 +1,271 @@
 import time
-from pprint import pprint
-from bson import ObjectId
-import urllib
-
-from selenium.webdriver.common.keys import Keys
-import pymongo
+from colorama import Fore, Style
 
 from selenium_driver import SeleniumDriver
-from selenium_sequence import Sequence
-from .application import application
-
-
-def update_autoapply(id, update={}):
-    client = pymongo.MongoClient("mongodb+srv://alterrecrut:Xw9SZ0QUmVhyWHmd@cluster0.qp93luo.mongodb.net/?retryWrites=true&w=majority")
-    db = client["tools"]
-    collection = db["automnations"]
-    collection.update_one({"_id": ObjectId(id)}, update)
-
 
 class LinkedIn:
 
     def __init__(self, config, driver=None):
-        print('-> create LinkedIn bot')
+        print('init LinkedIn bot')
         self.config = config
-        self.config["_id"] = str(self.config.get('_id'))
-        pprint(self.config)
-        self.data = []
-        self.driver = SeleniumDriver() if driver is None else driver
-        auth = config['auth']
-        print('-----------')
-        print(auth)
-        print(config['urls'][0])
-        self.driver.get(config['urls'][0])
-        if type(auth) is list:
-            for cookie in auth:
-                cookie = {'name': cookie.get('name'), 'value': cookie.get('value')}
-                self.driver.add_cookie(cookie)
-                self.driver.get(config['urls'][0])
-        # elif type(auth) is str:
-        #     if auth == 'indeed.com':
-        #         pass
-        #     if auth == 'pole-emploi.com':
-        #         pass
-        update_autoapply(self.config["_id"], {
-            "$set": {
-                "active": True,
-                "status": "active",
-                "message": "Initialisation ..."
-            }
-        })
-        return
-
-    # def login(self):
-    #     print('-> login')
-    #     update_autoapply(self.config["_id"], {
-    #         "$set": {
-    #             "message": "Connexion en cours ..."
-    #         }
-    #     })
-    #     time.sleep(1)
-    #     while not self.driver.is_attached('body > .application-outlet *'):
-    #         self.driver.get('https://linkedin.com')
-    #         if self.driver.is_attached('#session_key'):
-    #             self.driver.write('#session_key', self.config['user']['email'])
-    #             self.driver.write('#session_password',
-    #                               self.config['user']['password'])
-    #             self.driver.click("#main-content .sign-in-form__footer--full-width > button")
-    #             time.sleep(3)
-    #         time.sleep(1)
-    #         self.driver.captcha()
-    #     print('logged in !')
-    #     update_autoapply(self.config["_id"], {
-    #         "$set": {
-    #             "message": "Connexion réussie !"
-    #         }
-    #     })
-    #     return self.driver
+        self.driver = SeleniumDriver(headless=False) if driver is None else driver
 
     # ---------------- JOB APPLICATION -------------------- #
 
-    def apply(self, url=None):
-        print('-> apply')
-        # self.login()
+    def accept_cookies(self) -> None:
+        self.driver.click('.artdeco-global-alert__action-wrapper > button')
 
-        # update_autoapply(self.config["_id"], {
-        #     "$set": {
-        #         "message": f"Application in progress ..."
-        #     }
-        # })
+    def login(self) -> bool:
+        self.driver.get('https://linkedin.com/')
+        time.sleep(1)
+        if '/feed' not in self.driver.current_url():
+            for cookie in self.config['user']['cookies']:
+                # cookie = {'name': cookie.get('name'), 'value': cookie.get('value')}
+                self.driver.add_cookie({'name': cookie.get('name'), 'value': cookie.get('value')})
+                self.driver.get('https://linkedin.com/')    
+        return True
 
-        self.driver.get(url) if url is not None else ''
+    # ---------------- USER -------------------- #
 
-        url = self.driver.current_url()
+    def create_user(self):
+        pass
 
-        application_ok = application(self.driver, self.config['setting']).run(url=url)
+    # ---------------- JOB APPLICATION -------------------- #
+    
+    def application_exit(self) -> None:
+        # Clear Toasts
+        for _ in range(3):
+            time.sleep(1)
+            if self.driver.is_attached("#artdeco-toasts__wormhole .artdeco-toasts_toasts > *"):
+                self.driver.click(
+                    "#artdeco-toasts__wormhole .artdeco-toasts_toasts .artdeco-toast-item__dismiss")
+        # Dismiss Modal
+        dismiss_button = self.driver.find_elements(
+            "#artdeco-modal-outlet .artdeco-modal__dismiss")
+        if len(dismiss_button) > 0:
+            dismiss_button[0].click()
+            time.sleep(1)
+        confirm_close_button = self.driver.find_elements(
+            ".artdeco-modal--layer-confirmation .artdeco-modal__confirm-dialog-btn")
+        if len(confirm_close_button) > 0:
+            confirm_close_button[0].click()
+            time.sleep(2)
 
-        item = {}
-        if self.config['setting']['scrap']:
-            sequence = Sequence(driver=self.driver)
-            sequence.play()
-            sequence.data
-            print(sequence.data)
-            item = sequence.data[0]
-        item['url'] = url.split("?")[0]
-        # item['ressourceId'] = urllib.parse.urlparse(item['url']).path.split('/')
-        item['application_ok'] = application_ok
+    def application_hide(self) -> None:
+        pass
 
-        if application_ok is True:
-            update_autoapply(self.config["_id"], {
-                "$inc": {
-                    "result.success": 1
-                }
-            })
+    def application_end(self) -> None:
+        time.sleep(2)
+        for _ in range(2):
+            submit_button = self.driver.find_elements(
+                ".jobs-easy-apply-content footer button.artdeco-button--primary")
+            if len(submit_button) > 0:
+                submit_button[0].click()
+                time.sleep(2)
+        self.application_exit()
+        # if not self.options['hide_jobs']:
+        #     self.application_hide()
 
-        self.data.extend([item.copy()])
-        print(self.data)
+    def application_is_ended(self) -> bool:
+        time.sleep(3)
+        if len(self.driver.find_elements("#artdeco-modal-outlet .jpac-modal-header")) > 0:
+            self.application_end()
+            return True
+        else:
+            return False
 
-        return item
+    def application_has_error(self) -> bool:
+        if not self.driver.is_attached(".jobs-easy-apply-content h3") or self.driver.is_attached(".artdeco-toasts_toasts .artdeco-toast-item__icon--error, .artdeco-inline-feedback--error"):
+            print(Fore.RED + "application_has_error")
+            print(Style.RESET_ALL)
+            self.application_exit()
+            return True
+        else:
+            return False
 
-    def multi_apply(self):
-        print('-> multi_apply')
-        # self.login()
+    def application_question(self) -> None:
+        qn = 1 + len(self.driver.find_elements(".jobs-easy-apply-form-section__grouping"))
+        print(f'nb questions: {str(qn)}')
 
-        urlIndex = -1
-        try:
-            while 1 == 1:
+        loop = True
+        step_title = self.driver.find_element('.jobs-easy-apply-content form h3').get_attribute('innerText').lower()
+        for title in ['resume', 'CV', 'Vérifiez votre candidature']:
+            if title in step_title:
+                loop = False
+                break
+
+        if loop == True:
+            for qi in range(qn):
+                print(f'question: {str(qi + 1)}')
+                ok = False
+                time.sleep(1)
+
+                # if self.driver.is_attached('.jobs-easy-apply-modal__content .ui-attachment.jobs-document-upload-redesign-card__container') == True:
+                #     continue
+
+                css_selector = ".jobs-easy-apply-content form > * > * > div:nth-child(" + str(
+                    qi + 2) + ") label"
+                q_labels = self.driver.find_elements(css_selector)
+                if len(q_labels) == 0:
+                    print(Fore.RED + "No Label")
+                    print(Style.RESET_ALL)
+                    continue
+                q_label = q_labels[0].get_property('innerText').lower()
                 
-                print(self.config['urls'][urlIndex])
-                self.driver.get(self.config['urls'][urlIndex])
+                # Text Field
+                selector = ".jobs-easy-apply-content form > * > * > div:nth-child(" + str(
+                    qi + 2) + ") .artdeco-text-input--input"
+                q_inputs = self.driver.find_elements(selector)
+                if len(q_inputs) > 0:
+                    print('Text Field')
+                    if q_inputs[0].get_property('value') != "":
+                        continue
+                    for preset in self.config['setting']['presets']:
+                        if ok:
+                            break
+                        if preset in q_label:
+                            q_inputs[0].send_keys(
+                                self.config['setting']['presets'][preset])
+                            ok = True
+                    if not ok:
+                        q_inputs[0].send_keys("5")
+                    continue
 
-                update_autoapply(self.config["_id"], {
-                    "$set": {
-                        "message": "Scrapping ..."
-                    }
-                })
+                # Select Field
+                q_inputs = self.driver.find_elements(
+                    ".jobs-easy-apply-content form > * > * > div:nth-child(" + str(qi + 2) + ") select")
+                if len(q_inputs) > 0:
+                    print('Select Field')
+                    if q_inputs[0].get_property('value') != "" and q_inputs[0].get_property('value') != "Select an option":
+                        continue
+                    q_inputs[0].click()
+                    options = self.driver.find_elements(
+                        ".jobs-easy-apply-content form > * > * > div:nth-child(" + str(qi + 2) + ") select option")
+                    if len(q_inputs) > 0:
+                        ok = False
+                        for option in options:
+                            if ok:
+                                continue
+                            for preset in self.config['setting']['presets']:
+                                if preset in q_label and self.config['setting']['presets'][preset] in option.get_property('innerText').lower():
+                                    option.click()
+                                    ok = True
+                                    break
+                            if ok:
+                                break
+                        if not ok:
+                            for option in options:
+                                if "yes" in option.get_property('innerText').lower() or "oui" in option.get_property('innerText').lower():
+                                    option.click()
+                                    ok = True
+                                    break
+                        if not ok:
+                            options[len(options)-1].click()
+                    time.sleep(1)
+                    q_inputs[0].click()
+                    continue
+
+                # Checkbox Field
+                selector = ".jobs-easy-apply-content form > * > * > div:nth-child(" + str(
+                    qi + 2) + ") div.fb-text-selectable__option > label"
+                q_inputs = self.driver.find_elements(selector)
+                if len(q_inputs) > 0:
+                    print('Checkbox Field')
+                    q_inputs[0].click()
+                    continue
                 
-                # print('find urls')
-                print('scrapping ..')
-                sequence = Sequence(driver=self.driver, sequence={
-                    ":loop": {
-                        "pagination": 3,
-                        # "pagination": 'div.jobs-search-results-list__pagination li:last-child',
-                        "listing": {
-                            ":execute_script": 'document.querySelector("div.jobs-search-results-list").scroll(0, 999999)',
-                            ":get:all": {"property": "href",
-                                        "selector": 'div.artdeco-entity-lockup__title > a.job-card-container__link'},
-                            ":click": 'div.jobs-search-results-list__pagination li.selected + li',
-                        },
-                        "deep": False
-                    }
-                })
-                sequence.play()
+                print(Fore.RED + "field type not found")
+                print(Style.RESET_ALL)
 
-                # print(sequence.data)
-                # for url in sequence.data:
-                #     url = url.split('?')[0]
+        time.sleep(1)
+        self.driver.click(".jobs-easy-apply-content footer button.artdeco-button--primary")
 
-                uris = sequence.data
-                pprint(uris)
-                # update_autoapply(self.config["_id"], {
-                #     "$set": {
-                #         "message": f"{len(uris)} urls founded"
-                #     }
-                # })
+    def application(self) -> None:
+        print('application')
 
-                i = 0
-                for uri in uris:
-                    print(f"application {i} / {len(uris)}")
-                    update_autoapply(self.config["_id"], {
-                        "$set": {
-                            "message": f"Application {i} / {len(uris)} in progress ..."
-                        },
-                        "$inc": {
-                            "result.attempt": 1
-                        }
-                    })
-                    i = i + 1
-                    if self.apply(url=uri) is True:
-                        print('Application Successful')
+        if not self.driver.click('button.jobs-apply-button'):
+            return
+            
+        if self.application_is_ended():
+            return
+        
+        for _ in range(10):
+            self.application_question()
+            if self.application_is_ended():
+                print(Fore.GREEN + "+1 Application")
+                print(Style.RESET_ALL)
+                return
+            if self.application_has_error():
+                break
+            
+        time.sleep(2)
+        self.application_exit()
+        print(Fore.RED + "application doesn't finish successfuly")
+        print(Style.RESET_ALL)
+
+    def application_loop(self) -> None:
+        print('application_loop')
+        self.login()
+
+        for url in self.config['urls']:
+
+            self.driver.get(url)
+            # time.sleep
+
+            self.accept_cookies()
+
+            i_page = 1
+            while True:
+                i_page = i_page + 1
+                print(i_page)
+                time.sleep(2)
+
+                self.driver.execute_script("document.querySelector('.jobs-search-results-list').scroll(0, 9999)")
                 
-                
-                urlIndex = urlIndex + 1
-                if urlIndex > len(self.config['urls']):
-                    if not self.config['setting']['infinite']:
-                        update_autoapply(self.config["_id"], {
-                            "$set": {
-                                "status": "inactif",
-                                "active": False,
-                                "message": "Le script est fini"
-                            }
-                        })
-                        break
+                jobs = self.driver.find_elements('.job-card-container a')
+                i_job = -1
+                for job in jobs:
+                    i_job = i_job + 1
+
+                    ok = True
+                    job_title = job.get_attribute('innerText').strip()
+                    if job_title is not None:
+                        print(job_title)
+                        for excluded_keywords in self.config['setting']['excluded_keywords']:
+                            if excluded_keywords in job_title:
+                                ok = False
+                                print(Fore.RED + 'item excluded by keyword')
+                                print(Style.RESET_ALL)
+                                break
                     else:
-                        urlIndex = 0
+                        print(Fore.MAGENTA + 'Impossible to get job_title from listing')
+                        print(Style.RESET_ALL)
+                    company_title = self.driver.find_element(f'.scaffold-layout__list-container > li:nth-child({i_job + 1}) .job-card-container__primary-description')
+                    if company_title is not None:
+                        company_title = company_title.get_attribute('innerText').strip()
+                        print(company_title)
+                        for excluded_company in self.config['setting']['excluded_companies']:
+                            if excluded_company in company_title:
+                                ok = False
+                                print(Fore.RED + 'item excluded by company')
+                                print(Style.RESET_ALL)
+                                break
+                        if not ok:
+                            return False
+                    else:
+                        print(Fore.MAGENTA + 'Impossible to get company_title from listing')
+                        print(Style.RESET_ALL)
+                    
+                    try:
+                        job.click()
+                    except:
+                        continue
 
-                print('continue because infinite')
+                    self.application()
 
-        except Exception as e:
-            update_autoapply(self.config['_id'], {
-                "$set": {
-                    "status": "inactif",
-                    "active": False,
-                    "message": "Une erreur est survenue: " + str(e)
-                },
-                "$inc": {
-                    "result.error": 1
-                }
-            })
-            print('Une erreur est survenue')
+                if not self.driver.click('.artdeco-pagination__indicator.selected'):
+                    break
 
-        return self.data
+    def application_contact_recruiters(self) -> None:
+        pass
 
-    # def contact_job_recruiters(self):
-    #     return self.data

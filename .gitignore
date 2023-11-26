@@ -5,3 +5,6 @@
 .idea/
 env
 .linkedin/linkedin/__pycache__/
+linkedin/__pycache__/__init__.cpython-311.pyc
+linkedin/__pycache__/application.cpython-311.pyc
+linkedin/__pycache__/main.cpython-311.pyc

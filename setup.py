@@ -18,6 +18,7 @@ setup(
     install_requires=[
         "pymongo",
         "selenium", 
+        "tzmongo @ git+https://github.com/Tomizap/tzmongo.git#egg=tzmongo",
         "selenium_driver @ git+https://github.com/Tomizap/selenium_driver.git#egg=selenium_driver",
         "selenium_sequence @ git+https://github.com/Tomizap/selenium_sequence.git#egg=selenium_sequence"
     ],
